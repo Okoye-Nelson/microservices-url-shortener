@@ -16,7 +16,7 @@ A cloud-native URL shortener built with **Golang microservices**, **Clean Archit
 
 - GitOps workflow management
 
-- Cloud-native observability practices
+- Cloud-native observability practices 
 
 ---
 
