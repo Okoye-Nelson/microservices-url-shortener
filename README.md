@@ -1,25 +1,64 @@
-# Golang URL Shortener
+# URL Shortener Microservices — Production-Ready Architecture
 
-This URL shortener service, built with Go and Hexagonal Architecture, leverages a serverless approach for efficient scalability and performance. It uses a variety of AWS services to provide a robust, maintainable, and highly available URL shortening service.
+A cloud-native URL shortener built with **Golang microservices**, **Clean Architecture**, **Docker**, and **Kubernetes**, following modern DevOps and platform engineering practices. This repository is part of an ongoing effort to learn, improve, and extend scalable distributed systems by studying real-world patterns and infrastructure workflows.
 
+---
 
-- [Prerequisites](#prerequisites)
-- [Technologies Used](#technologies-used)
-- [System Architecture](#system-architecture)
-# URL Shortener Microservices - Complete Repository Guide
+### 🎯 Skills Demonstrated
 
-A production-ready URL shortener built with **Go microservices** using **Clean Architecture**, featuring containerized deployment, Kubernetes manifests, and comprehensive monitoring. This repository demonstrates modern cloud-native development practices with multiple deployment options.
+- Go microservices with domain boundaries
 
+- Clean Architecture implementation
 
-### **Prerequisites**
-- **Docker** & **Docker Compose** (for local development)
-- **Go 1.22+** (see `go.mod` for exact version)
-- **kubectl** (for Kubernetes deployment)
-- **PostgreSQL** (for local database development)
+- Docker multi-arch builds
 
+- Kubernetes deployment patterns
+
+- GitOps workflow management
+
+- Cloud-native observability practices
+
+---
+
+## 📦 Features at a Glance
+
+<p align="center">
+
+<img src="https://img.shields.io/badge/Go-Microservices-00ADD8?style=flat-square" />
+<img src="https://img.shields.io/badge/Clean_Architecture-Yes-9333EA?style=flat-square" />
+<img src="https://img.shields.io/badge/PostgreSQL-Database-4169E1?style=flat-square" />
+<img src="https://img.shields.io/badge/Docker_&_Compose-Ready-2496ED?style=flat-square" />
+<img src="https://img.shields.io/badge/Multi-arch_Build-Yes-0EA5E9?style=flat-square" />
+<img src="https://img.shields.io/badge/Kubernetes-Manifests-326CE5?style=flat-square" />
+<img src="https://img.shields.io/badge/GitOps-Portainer-0EA5E9?style=flat-square" />
+<img src="https://img.shields.io/badge/CI-Automation-0F766E?style=flat-square" />
+
+</p>
+
+- **Independent Go microservices:** Link, Redirect, Stats  
+- **Clean Architecture + modular domain layers** for maintainable code  
+- **PostgreSQL** as persistent data store  
+- **Docker & Docker Compose** for full local stack  
+- **Multi-arch Docker builds** + automated Docker Hub pipelines  
+- **Kubernetes manifests** for production deployment  
+- **Optional GitOps workflow** with Portainer for automated cluster sync  
+- **Built-in scripts** (`push-to-dockerhub.sh`) for CI/CD style automation  
+
+---
+
+## 🛠 Prerequisites
+
+Ensure the following are installed:
+
+- **Go 1.22+**
+- **Docker** & **Docker Compose**
+- **kubectl**
+- **PostgreSQL**
+- A Kubernetes cluster (local or cloud)
+- Optional: **Portainer** for GitOps workflows
+
+---
 ### **Local Development with Docker Compose**
-
-The `docker-compose.yaml` sets up the complete stack locally:
 
 ```bash
 # Start all services with hot reload
@@ -28,7 +67,9 @@ docker-compose up --build
 # Access points:
 # Frontend: http://localhost:3000
 # API Gateway: http://localhost:8080  
-# Direct services: 8001, 8002, 8003
+# Link service :8001 
+# Redirect :8002
+# Stats service :8003
 # PostgreSQL: localhost:5432
 ```
 
@@ -123,6 +164,7 @@ kubectl apply -f k8s/base/
 # Check deployment status
 kubectl get pods -n url-shortener
 kubectl get services -n url-shortener
+kubectl get ingress -n url-shortener
 ```
 
 ### **Option 2: Portainer GitOps** (`k8s/gitopsportainer/`)
