@@ -1,7 +1,7 @@
 // URL Shortener Frontend Script v2.3 - Proxy version
 // API Configuration
 console.log('Script starting to load...');
-const API_BASE_URL = ''; // Use relative URLs for API calls
+const API_BASE = "http://localhost:8080/api"; // Use relative URLs for API calls
 const DISPLAY_BASE_URL = window.location.origin; // Use full domain for display URLs
 
 // Wait for backend to be ready before initializing

@@ -1,7 +1,5 @@
-version: '3.8'
-
 services:
-  # Databases
+  # Database
   postgres:
     image: postgres:15-alpine
     container_name: url-shortener-postgres
@@ -33,19 +31,19 @@ services:
       - url-shortener-network
     restart: unless-stopped
 
-  # Microservices
+  # Link Service
   link-service:
     build:
-      context: .
-      dockerfile: ./services/link-service/Dockerfile
+      context: ./services/link-service
+      dockerfile: Dockerfile
     container_name: url-shortener-link-service
     environment:
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres
-      - DB_NAME=urlshortener
-      - SERVICE_PORT=8001
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: urlshortener
+      SERVICE_PORT: 8001
     ports:
       - "8001:8001"
     depends_on:
@@ -54,18 +52,19 @@ services:
       - url-shortener-network
     restart: unless-stopped
 
+  # Redirect Service
   redirect-service:
     build:
-      context: .
-      dockerfile: ./services/redirect-service/Dockerfile
+      context: ./services/redirect-service
+      dockerfile: Dockerfile
     container_name: url-shortener-redirect-service
     environment:
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres
-      - DB_NAME=urlshortener
-      - SERVICE_PORT=8002
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: urlshortener
+      SERVICE_PORT: 8002
     ports:
       - "8002:8002"
     depends_on:
@@ -74,18 +73,19 @@ services:
       - url-shortener-network
     restart: unless-stopped
 
+  # Stats Service
   stats-service:
     build:
-      context: .
-      dockerfile: ./services/stats-service/Dockerfile
+      context: ./services/stats-service
+      dockerfile: Dockerfile
     container_name: url-shortener-stats-service
     environment:
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres
-      - DB_NAME=urlshortener
-      - SERVICE_PORT=8003
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: urlshortener
+      SERVICE_PORT: 8003
     ports:
       - "8003:8003"
     depends_on:
@@ -97,15 +97,16 @@ services:
   # Frontend
   frontend:
     build:
-      context: .
-      dockerfile: ./frontend/Dockerfile
+      context: ./frontend
+      dockerfile: Dockerfile
     container_name: url-shortener-frontend
     ports:
       - "3000:80"
-    networks:
-      - url-shortener-network
     depends_on:
       - nginx
+    networks:
+      - url-shortener-network
+    restart: unless-stopped
 
 volumes:
   postgres_data:
