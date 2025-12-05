@@ -1,42 +1,23 @@
 services:
-  # Database
   postgres:
-    image: postgres:15-alpine
-    container_name: url-shortener-postgres
+    image: postgres:15
+    container_name: url-shortener-db
     environment:
-      POSTGRES_DB: urlshortener
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: urlshortener
+    volumes:
+      - pgdata:/var/lib/postgresql/data
     ports:
       - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
-    networks:
-      - url-shortener-network
 
-  # API Gateway / Load Balancer
-  nginx:
-    image: nginx:alpine
-    container_name: url-shortener-gateway
-    ports:
-      - "8080:80"
-    volumes:
-      - ./configs/nginx.conf:/etc/nginx/nginx.conf
-    depends_on:
-      - link-service
-      - redirect-service
-      - stats-service
-    networks:
-      - url-shortener-network
-    restart: unless-stopped
-
-  # Link Service
   link-service:
     build:
-      context: ./services/link-service
-      dockerfile: Dockerfile
-    container_name: url-shortener-link-service
+      context: .
+      dockerfile: services/link-service/Dockerfile
+    container_name: link-service
+    depends_on:
+      - postgres
     environment:
       DB_HOST: postgres
       DB_PORT: 5432
@@ -46,18 +27,14 @@ services:
       SERVICE_PORT: 8001
     ports:
       - "8001:8001"
-    depends_on:
-      - postgres
-    networks:
-      - url-shortener-network
-    restart: unless-stopped
 
-  # Redirect Service
   redirect-service:
     build:
-      context: ./services/redirect-service
-      dockerfile: Dockerfile
-    container_name: url-shortener-redirect-service
+      context: .
+      dockerfile: services/redirect-service/Dockerfile
+    container_name: redirect-service
+    depends_on:
+      - postgres
     environment:
       DB_HOST: postgres
       DB_PORT: 5432
@@ -67,18 +44,14 @@ services:
       SERVICE_PORT: 8002
     ports:
       - "8002:8002"
-    depends_on:
-      - postgres
-    networks:
-      - url-shortener-network
-    restart: unless-stopped
 
-  # Stats Service
   stats-service:
     build:
-      context: ./services/stats-service
-      dockerfile: Dockerfile
-    container_name: url-shortener-stats-service
+      context: .
+      dockerfile: services/stats-service/Dockerfile
+    container_name: stats-service
+    depends_on:
+      - postgres
     environment:
       DB_HOST: postgres
       DB_PORT: 5432
@@ -88,29 +61,28 @@ services:
       SERVICE_PORT: 8003
     ports:
       - "8003:8003"
-    depends_on:
-      - postgres
-    networks:
-      - url-shortener-network
-    restart: unless-stopped
 
-  # Frontend
+  gateway:
+    image: nginx:alpine
+    container_name: url-shortener-gateway
+    volumes:
+      - ./local-gateway.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - link-service
+      - redirect-service
+      - stats-service
+    ports:
+      - "8080:8080"
+
   frontend:
     build:
-      context: ./frontend
+      context: frontend
       dockerfile: Dockerfile
     container_name: url-shortener-frontend
     ports:
       - "3000:80"
     depends_on:
-      - nginx
-    networks:
-      - url-shortener-network
-    restart: unless-stopped
+      - gateway
 
 volumes:
-  postgres_data:
-
-networks:
-  url-shortener-network:
-    driver: bridge
+  pgdata:

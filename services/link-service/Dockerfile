@@ -1,27 +1,18 @@
+# Build stage
 FROM golang:1.22-alpine AS builder
-
 WORKDIR /app
 
-# Copy go mod and sum files
+# Copy go.mod and go.sum from project root
 COPY go.mod go.sum ./
-
-# Download dependencies
 RUN go mod download
 
-# Copy source code
-COPY . .
+# Copy service-specific code
+COPY services/link-service/*.go ./
+RUN go build -o link-service
 
-# Build the service
-RUN CGO_ENABLED=0 GOOS=linux go build -o link-service ./services/link-service/main.go
-
+# Final stage
 FROM alpine:latest
-
-RUN apk --no-cache add ca-certificates
-
-WORKDIR /root/
-
+WORKDIR /app
 COPY --from=builder /app/link-service .
-
 EXPOSE 8001
-
 CMD ["./link-service"]
