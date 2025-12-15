@@ -1,0 +1,44 @@
+# Frontend Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: itsbaivab/frontend:latest # BEST PRACTICE: Use a specific version tag like 'v1.0.0' instead of ':latest'.
+          ports:
+            - containerPort: 80
+          env:
+            - name: API_BASE_URL
+              value: "http://nginx-gateway"
+          resources:
+            requests:
+              memory: "32Mi"
+              cpu: "25m"
+            limits:
+              memory: "64Mi"
+              cpu: "50m"
+---
+# Frontend Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: default
+spec:
+  selector:
+    app: frontend
+  ports:
+    - port: 80
+      targetPort: 80

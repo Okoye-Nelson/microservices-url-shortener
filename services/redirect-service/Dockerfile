@@ -1,15 +1,19 @@
 # Build stage
-FROM golang:1.22-alpine AS builder
+FROM golang:1.23-alpine AS builder
 WORKDIR /app
 
 COPY go.mod go.sum ./
 RUN go mod download
+ 
+# Copy only the necessary source code
+COPY internal/ ./internal/
+COPY services/redirect-service/ ./services/redirect-service/
 
-COPY services/redirect-service/*.go ./
-RUN go build -o redirect-service
+# Build a static, production-ready binary
+RUN CGO_ENABLED=0 go build -ldflags="-w -s" -o redirect-service ./services/redirect-service/
 
 # Final stage
-FROM alpine:latest
+FROM scratch
 WORKDIR /app
 COPY --from=builder /app/redirect-service .
 EXPOSE 8002
