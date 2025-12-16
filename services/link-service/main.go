@@ -8,6 +8,7 @@ import (
 	"log"
 	"math/big"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"syscall"
@@ -122,8 +123,13 @@ func (h *LinkServiceHandler) CreateLink(c *gin.Context) {
 	}
 
 	// Validate URL
-	if len(req.Long) < 15 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "URL must be at least 15 characters long"})
+	parsedURL, err := url.ParseRequestURI(req.Long)
+	if err != nil || (parsedURL.Scheme != "http" && parsedURL.Scheme != "https") || parsedURL.Host == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "A valid URL with http or https scheme is required"})
+		return
+	}
+	if len(req.Long) > 2048 { // Add a reasonable length limit
+		c.JSON(http.StatusBadRequest, gin.H{"error": "URL cannot exceed 2048 characters"})
 		return
 	}
 
@@ -189,7 +195,11 @@ func generateShortURLID(length int) string {
 	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	result := make([]byte, length)
 	for i := range result {
-		charIndex, _ := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
+		charIndex, err := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
+		if err != nil {
+			// Fallback to a less random but safe method if crypto/rand fails
+			return "fallback" + fmt.Sprintf("%d", time.Now().UnixNano())
+		}
 		result[i] = charset[charIndex.Int64()]
 	}
 	return string(result)

@@ -33,38 +33,16 @@ A modern, responsive frontend for the URL Shortener microservices application bu
 
 ### Prerequisites
 Make sure the backend services are running. You can start them using:
-
 ```bash
 # From the project root directory
-make dev
-
-# Or using Docker Compose directly
 docker compose up --build
 ```
 
 ### Running the Frontend
 
-1. **Simple Local Server** (Recommended):
-   ```bash
-   cd frontend
-   python3 -m http.server 3000
-   ```
-   Then open http://localhost:3000
+The frontend is now integrated into the main `docker-compose.yml` file. Running `docker compose up --build` from the project root will start both the backend and frontend services.
 
-2. **Using Node.js**:
-   ```bash
-   cd frontend
-   npx serve -p 3000
-   ```
-
-3. **Using PHP**:
-   ```bash
-   cd frontend
-   php -S localhost:3000
-   ```
-
-4. **Direct File Access**:
-   Simply open `index.html` in your web browser (note: some features may not work due to CORS restrictions)
+You can access the application at **http://localhost:3000**.
 
 ## API Integration
 

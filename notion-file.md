@@ -23,7 +23,7 @@ The project follows a microservices architecture, promoting separation of concer
 -   **Link Service**: The core service responsible for the business logic of creating, listing, and deleting short links. It validates incoming URLs and generates unique short IDs.
 -   **Redirect Service**: A high-performance service focused solely on handling incoming short URL requests, looking up the original URL, and issuing an HTTP 302 redirect. It also publishes a "click" event for analytics.
 -   **Stats Service**: Consumes "click" events and aggregates statistics. It provides the data for the analytics dashboard on the frontend.
--   **Notification Service**: A consumer service that listens for specific events (e.g., new link creation) and sends notifications to external systems like Slack.
+-   **Notification Service**: (Currently disabled in local setup) A consumer service that listens for specific events (e.g., new link creation) and sends notifications to external systems like Slack.
 -   **Frontend**: A vanilla JavaScript single-page application that provides the user interface. It is served as a static asset and communicates with the backend via the API Gateway.
 
 ### 2.2. Infrastructure Components
@@ -31,7 +31,7 @@ The project follows a microservices architecture, promoting separation of concer
 -   **Nginx API Gateway**: The single entry point for all external traffic. It routes requests to the appropriate backend service, handles rate limiting, and manages CORS policies.
 -   **PostgreSQL**: The primary relational database used for persistent storage of links and their associated statistics. It is deployed as a `StatefulSet` in Kubernetes for data stability.
 -   **Redis**: An in-memory cache used by the `link-service` to speed up lookups and reduce database load.
--   **RabbitMQ**: A message broker used for asynchronous communication between services. For example, the `redirect-service` publishes a message to a queue, which the `stats-service` and `notification-service` consume. This decouples the click-tracking process from the user-facing redirect, ensuring low latency.
+-   **RabbitMQ**: A message broker used for asynchronous communication between services. For example, the `redirect-service` publishes a message to a queue, which the `stats-service` (and potentially the Notification Service) consume. This decouples the click-tracking process from the user-facing redirect, ensuring low latency.
 
 ## 3. Local Development Environment
 
@@ -67,8 +67,6 @@ The entire stack can be run locally using Docker Compose, providing a developmen
     -   **Frontend UI**: `http://localhost:3000`
     -   **API Gateway**: `http://localhost:8080`
     -   **RabbitMQ Management**: `http://localhost:15672` (user: `admin`, pass: `admin`)
-    -   **PostgreSQL**: `localhost:5432`
-    -   **Redis**: `localhost:6379`
 
 ### 3.4. Stopping the Stack
 -   To stop all running containers, press `Ctrl+C` in the terminal where `docker compose` is running.
@@ -109,7 +107,6 @@ This structure is a best practice that allows for granular control, easier debug
     kubectl get services
     ```
     Look for the `nginx-gateway` service of type `LoadBalancer` to find the external IP address for accessing the application.
-
 
 ## 5. API Endpoints
 

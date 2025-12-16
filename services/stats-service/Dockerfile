@@ -11,11 +11,14 @@ COPY internal/ ./internal/
 COPY services/stats-service/ ./services/stats-service/
 
 # Build a static, production-ready binary
-RUN CGO_ENABLED=0 go build -ldflags="-w -s" -o stats-service ./services/stats-service/
+RUN CGO_ENABLED=0 go build -ldflags="-w -s" -o /stats-service ./services/stats-service/
 
 # Final stage
 FROM scratch
-WORKDIR /app
-COPY --from=builder /app/stats-service .
+
+# Create a non-root user
+USER 65532:65532
+
+COPY --from=builder /stats-service /stats-service
 EXPOSE 8003
-CMD ["./stats-service"]
+CMD ["/stats-service"]

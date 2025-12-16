@@ -218,17 +218,7 @@ if (elements.shortenForm) {
             showToast('Please enter a URL', 'error');
             return;
         }
-    
-    if (longUrl.length < 15) {
-        showToast('URL must be at least 15 characters long', 'error');
-        return;
-    }
-    
-    if (!isValidURL(longUrl)) {
-        showToast('Please enter a valid URL (must start with http:// or https://)', 'error');
-        return;
-    }
-    
+
     setLoading(true);
     
     try {

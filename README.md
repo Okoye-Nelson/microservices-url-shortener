@@ -44,7 +44,7 @@ A cloud-native URL shortener built with **Golang microservices**, **Clean Archit
 
 Ensure the following are installed:
 
-- **Go 1.22+**
+- **Go 1.23+**
 - **Docker** & **Docker Compose**
 - **kubectl**
 - A Kubernetes cluster (local or cloud)
@@ -67,9 +67,6 @@ docker compose up --build
 # Access points:
 # Frontend: http://localhost:3000
 # API Gateway: http://localhost:8080  
-# Link service :8001 
-# Redirect :8002
-# Stats service :8003
 # PostgreSQL: localhost:5432
 ```
 
