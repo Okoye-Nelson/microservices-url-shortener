@@ -39,7 +39,7 @@ Make sure the backend services are running. You can start them using:
 make dev
 
 # Or using Docker Compose directly
-docker-compose up --build
+docker compose up --build
 ```
 
 ### Running the Frontend
@@ -79,13 +79,15 @@ All requests go through the Nginx gateway at `http://localhost:8080`.
 
 ### API Endpoints Used
 
+The base URL for the API gateway is configured in `script.js`. All endpoints are relative to this base.
+
 ```javascript
+// Example from script.js
+const API_BASE_URL = "http://localhost:8080";
 const API_ENDPOINTS = {
-    generate: 'http://localhost:8080/api/generate',      // PUT - Create short URL
-    redirect: 'http://localhost:8080/r',                 // GET - Redirect to original
-    stats: 'http://localhost:8080/api/stats',            // GET - Get statistics
-    delete: 'http://localhost:8080/api/delete',          // DELETE - Delete URL
-    notifications: 'http://localhost:8080/api/notifications' // POST - Send notification
+    generate: `${API_BASE_URL}/api/generate`, // PUT
+    stats: `${API_BASE_URL}/api/stats`,       // GET
+    delete: `${API_BASE_URL}/api/delete`,     // DELETE
 };
 ```
 

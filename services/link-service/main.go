@@ -26,14 +26,6 @@ type LinkServiceHandler struct {
 	linkService *services.LinkService
 }
 
-type CreateLinkRequest struct {
-	Long string `json:"long" binding:"required"`
-}
-
-type DeleteLinkRequest struct {
-	ID string `json:"id" binding:"required"`
-}
-
 func main() {
 	// Database connection
 	dbHost := getEnv("DB_HOST", "localhost")
@@ -84,7 +76,7 @@ func main() {
 	// Link endpoints
 	router.PUT("/generate", handler.CreateLink)
 	router.GET("/links", handler.GetAllLinks)
-	router.DELETE("/delete", handler.DeleteLink)
+	router.DELETE("/delete/:id", handler.DeleteLink) // Use path parameter for ID
 
 	// Start server
 	port := getEnv("SERVICE_PORT", "8001")
@@ -120,7 +112,10 @@ func main() {
 }
 
 func (h *LinkServiceHandler) CreateLink(c *gin.Context) {
-	var req CreateLinkRequest
+	var req struct {
+		Long string `json:"long" binding:"required"`
+	}
+
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -132,15 +127,24 @@ func (h *LinkServiceHandler) CreateLink(c *gin.Context) {
 		return
 	}
 
-	// Generate short link
-	link := domain.Link{
-		Id:          generateShortURLID(8),
-		OriginalURL: req.Long,
-		CreatedAt:   time.Now(),
+	var link domain.Link
+	var errCreate error
+	maxRetries := 3 // Number of times to retry on ID collision
+
+	for i := 0; i < maxRetries; i++ {
+		link = domain.Link{
+			Id:          generateShortURLID(8),
+			OriginalURL: req.Long,
+			CreatedAt:   time.Now(),
+		}
+		errCreate = h.linkService.Create(c.Request.Context(), link)
+		if errCreate == nil {
+			break // Success
+		}
 	}
 
-	if err := h.linkService.Create(c.Request.Context(), link); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	if errCreate != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create unique link, please try again"})
 		return
 	}
 
@@ -160,13 +164,13 @@ func (h *LinkServiceHandler) GetAllLinks(c *gin.Context) {
 }
 
 func (h *LinkServiceHandler) DeleteLink(c *gin.Context) {
-	var req DeleteLinkRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	id := c.Param("id")
+	if id == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID parameter is required"})
 		return
 	}
 
-	if err := h.linkService.Delete(c.Request.Context(), req.ID); err != nil {
+	if err := h.linkService.Delete(c.Request.Context(), id); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

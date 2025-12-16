@@ -1,0 +1,151 @@
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - app-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
+
+  link-service:
+    build:
+      context: .
+      dockerfile: services/link-service/Dockerfile
+    container_name: link-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      SERVICE_PORT: 8001
+    ports:
+      - "8001:8001"
+    networks:
+      - app-network
+
+  redirect-service:
+    build:
+      context: .
+      dockerfile: services/redirect-service/Dockerfile
+    container_name: redirect-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      RABBITMQ_URL: "amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672/"
+      SERVICE_PORT: 8002
+    ports:
+      - "8002:8002"
+    networks:
+      - app-network
+
+  stats-service:
+    build:
+      context: .
+      dockerfile: services/stats-service/Dockerfile
+    container_name: stats-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      RABBITMQ_URL: "amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672/"
+      SERVICE_PORT: 8003
+    ports:
+      - "8003:8003"
+    networks:
+      - app-network
+
+  # notification-service:
+  #   build:
+  #     context: .
+  #     dockerfile: services/notification-service/Dockerfile
+  #   container_name: notification-service
+  #   depends_on:
+  #     rabbitmq:
+  #       condition: service_started
+  #   environment:
+  #     RABBITMQ_URL: "amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672/"
+  #     SLACK_TOKEN: ${SLACK_TOKEN}
+  #     SLACK_CHANNEL_ID: ${SLACK_CHANNEL_ID}
+  #     SERVICE_PORT: 8004
+  #   ports:
+  #     - "8004:8004"
+  #   networks:
+  #     - app-network
+
+  nginx-gateway:
+    image: nginx:alpine
+    container_name: nginx-gateway
+    ports:
+      - "8080:80"
+    volumes:
+      - ./k8s/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./k8s/cors.conf:/etc/nginx/conf.d/cors.conf:ro
+    depends_on:
+      - link-service
+      - redirect-service
+      - stats-service
+      # - notification-service
+    networks:
+      - app-network

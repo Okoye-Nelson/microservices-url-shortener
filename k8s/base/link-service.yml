@@ -1,0 +1,81 @@
+# Link Service Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: link-service
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: link-service
+  template:
+    metadata:
+      labels:
+        app: link-service
+    spec:
+      containers:
+        - name: link-service
+          image: itsbaivab/link-service:latest # BEST PRACTICE: Use a specific version tag like 'v1.0.0' instead of ':latest'.
+          env:
+            - name: DB_HOST
+              value: postgres
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: POSTGRES_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: POSTGRES_PASSWORD
+            - name: DB_NAME
+              value: urlshortener
+            - name: RABBITMQ_URL
+              value: "amqp://user:pass@rabbitmq:5672/" # Placeholder, will be substituted by user/pass below
+            - name: RABBITMQ_USER
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-credentials
+                  key: RABBITMQ_DEFAULT_USER
+            - name: RABBITMQ_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-credentials
+                  key: RABBITMQ_DEFAULT_PASS
+            - name: REDIS_HOST
+              value: redis
+            - name: REDIS_PORT
+              value: "6379"
+            - name: SERVICE_PORT
+              value: "8001"
+          ports:
+            - containerPort: 8001
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8001
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8001
+            initialDelaySeconds: 10
+            periodSeconds: 5
+---
+# Link Service Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: link-service
+  namespace: default
+spec:
+  selector:
+    app: link-service
+  ports:
+    - port: 8001
+      targetPort: 8001

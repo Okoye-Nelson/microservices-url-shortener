@@ -1,42 +1,83 @@
-# Golang URL Shortener
+# URL Shortener Microservices — Production-Ready Architecture
 
-This URL shortener service, built with Go and Hexagonal Architecture, leverages a serverless approach for efficient scalability and performance. It uses a variety of AWS services to provide a robust, maintainable, and highly available URL shortening service.
+A cloud-native URL shortener built with **Golang microservices**, **Clean Architecture**, **Docker**, and **Kubernetes**, following modern DevOps and platform engineering practices. This repository is part of an ongoing effort to learn, improve, and extend scalable distributed systems by studying real-world patterns and infrastructure workflows.
 
+---
 
-- [Prerequisites](#prerequisites)
-- [Technologies Used](#technologies-used)
-- [System Architecture](#system-architecture)
-# URL Shortener Microservices - Complete Repository Guide
+### 🎯 Skills Demonstrated
 
-A production-ready URL shortener built with **Go microservices** using **Clean Architecture**, featuring containerized deployment, Kubernetes manifests, and comprehensive monitoring. This repository demonstrates modern cloud-native development practices with multiple deployment options.
+- Go microservices with domain boundaries
 
+- Clean Architecture implementation
 
-### **Prerequisites**
-- **Docker** & **Docker Compose** (for local development)
-- **Go 1.22+** (see `go.mod` for exact version)
-- **kubectl** (for Kubernetes deployment)
-- **PostgreSQL** (for local database development)
+- Docker multi-arch builds
 
+- Kubernetes modular deployment patterns
+
+- Cloud-native observability practices 
+
+---
+
+## 📦 Features at a Glance
+
+<p align="center">
+
+<img src="https://img.shields.io/badge/Go-Microservices-00ADD8?style=flat-square" />
+<img src="https://img.shields.io/badge/Clean_Architecture-Yes-9333EA?style=flat-square" />
+<img src="https://img.shields.io/badge/PostgreSQL-Database-4169E1?style=flat-square" />
+<img src="https://img.shields.io/badge/Docker_&_Compose-Ready-2496ED?style=flat-square" />
+<img src="https://img.shields.io/badge/Multi-arch_Build-Yes-0EA5E9?style=flat-square" />
+<img src="https://img.shields.io/badge/CI-Automation-0F766E?style=flat-square" />
+
+</p>
+
+- **Independent Go microservices:** Link, Redirect, Stats  
+- **Clean Architecture + modular domain layers** for maintainable code  
+- **PostgreSQL** as persistent data store  
+- **Docker & Docker Compose** for full local stack  
+- **Multi-arch Docker builds** + automated Docker Hub pipelines  
+- **Built-in scripts** (`push-to-dockerhub.sh`) for CI/CD style automation  
+
+---
+
+## 🛠 Prerequisites
+
+Ensure the following are installed:
+
+- **Go 1.22+**
+- **Docker** & **Docker Compose**
+- **kubectl**
+- A Kubernetes cluster (local or cloud)
+
+---
+### **Local Environment Setup**
+
+Before running the services, you need to create a local environment file.
+
+```bash
+cp .env.example .env
+```
+---
 ### **Local Development with Docker Compose**
-
-The `docker-compose.yaml` sets up the complete stack locally:
 
 ```bash
 # Start all services with hot reload
-docker-compose up --build
+docker compose up --build
 
 # Access points:
 # Frontend: http://localhost:3000
 # API Gateway: http://localhost:8080  
-# Direct services: 8001, 8002, 8003
+# Link service :8001 
+# Redirect :8002
+# Stats service :8003
 # PostgreSQL: localhost:5432
 ```
 
 ### **Manual Service Development**
 
 ```bash
-# Run database migrations
-psql -h localhost -U postgres -d urlshortener -f scripts/init.sql
+# The database is initialized automatically by Docker Compose using scripts/init.sql
+# To run manually: psql -h localhost -U postgres -d urlshortener -f scripts/init.sql
 
 # Start individual services
 cd services/link-service && go run main.go
@@ -51,16 +92,16 @@ The `push-to-dockerhub.sh` script automates building and pushing all service ima
 ### **Script Configuration**
 
 ```bash
-# Default configuration (edit in script)
-DOCKER_HUB_USERNAME="piyushsachdeva"          # Your Docker Hub username
+# Default configuration (can be overridden by environment variables)
+DOCKER_HUB_USERNAME="<your-dockerhub-username>" # Your Docker Hub username
 IMAGE_TAG="${IMAGE_TAG:-latest}"         # Configurable via environment
 BUILD_PLATFORM="linux/amd64,linux/arm64" # Multi-architecture support
 
 # Services built:
-- url-shortener-link      (services/link-service/Dockerfile)
-- url-shortener-redirect  (services/redirect-service/Dockerfile)  
-- url-shortener-stats     (services/stats-service/Dockerfile)
-- url-shortener-frontend  (frontend/Dockerfile)
+- link-service      (services/link-service/Dockerfile)
+- redirect-service  (services/redirect-service/Dockerfile)  
+- stats-service     (services/stats-service/Dockerfile)
+- frontend          (frontend/Dockerfile)
 ```
 
 ### **Complete Build & Push Workflow**
@@ -114,49 +155,19 @@ export BUILD_PLATFORM="linux/amd64"
 
 ## ⚓ **Kubernetes Deployment Options**
 
-### **Option 1: Standard Kubernetes** (`k8s/base/`)
+### **Standard Kubernetes Deployment**
 
+All Kubernetes resources are defined in a single manifest file. For a production environment, it is highly recommended to split this into individual resource files (e.g., in a `k8s/base/` directory).
 ```bash
 # Deploy to any Kubernetes cluster
 kubectl apply -f k8s/base/
 
 # Check deployment status
-kubectl get pods -n url-shortener
-kubectl get services -n url-shortener
-```
-
-### **Option 2: Portainer GitOps** (`k8s/gitopsportainer/`)
-
-Complete GitOps deployment with Portainer management interface. **For detailed Portainer setup instructions, see:**
-
-📖 **[k8s/gitopsportainer/README-GITOPS.md](k8s/gitopsportainer/README-GITOPS.md)**
-
-**Quick Portainer Deployment:**
-
-```bash
-# Navigate to GitOps directory
-cd k8s/gitopsportainer/
-
-# Option A: Automatic deployment (recommended)
-./deploy.sh
-
-```
-
-**Access after Portainer deployment:**
-```bash
-# Via Ingress (recommended)
-kubectl get ingress -n url-shortener
-
-# Via LoadBalancer
-kubectl get svc -n url-shortener | grep LoadBalancer
-
-# Via Port Forward (development)
-kubectl port-forward svc/frontend 8080:80 -n url-shortener
+kubectl get pods
+kubectl get services
 ```
 
 ## 🔗 **Related Documentation**
 
-- **Portainer GitOps Setup**: [k8s/gitopsportainer/README-GITOPS.md](k8s/gitopsportainer/README-GITOPS.md)
 - **API Documentation**: Available at `/api/docs` when services are running
 - **Database Schema**: See `scripts/init.sql` for complete schema
-

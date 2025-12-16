@@ -1,27 +1,20 @@
-FROM golang:1.22-alpine AS builder
-
+# Build stage
+FROM golang:1.23-alpine AS builder
 WORKDIR /app
 
-# Copy go mod and sum files
 COPY go.mod go.sum ./
-
-# Download dependencies
 RUN go mod download
+ 
+# Copy only the necessary source code
+COPY internal/ ./internal/
+COPY services/redirect-service/ ./services/redirect-service/
 
-# Copy source code
-COPY . .
+# Build a static, production-ready binary
+RUN CGO_ENABLED=0 go build -ldflags="-w -s" -o redirect-service ./services/redirect-service/
 
-# Build the service
-RUN CGO_ENABLED=0 GOOS=linux go build -o redirect-service ./services/redirect-service/main.go
-
-FROM alpine:latest
-
-RUN apk --no-cache add ca-certificates
-
-WORKDIR /root/
-
+# Final stage
+FROM scratch
+WORKDIR /app
 COPY --from=builder /app/redirect-service .
-
 EXPOSE 8002
-
 CMD ["./redirect-service"]

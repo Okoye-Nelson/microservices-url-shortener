@@ -1,7 +1,7 @@
 // URL Shortener Frontend Script v2.3 - Proxy version
 // API Configuration
 console.log('Script starting to load...');
-const API_BASE_URL = ''; // Use relative URLs for API calls
+const API_BASE_URL = "http://localhost:8080"; // Use relative URLs for API calls
 const DISPLAY_BASE_URL = window.location.origin; // Use full domain for display URLs
 
 // Wait for backend to be ready before initializing
@@ -11,7 +11,7 @@ async function waitForBackend() {
     
     for (let i = 0; i < maxRetries; i++) {
         try {
-            const response = await fetch(`${API_BASE_URL}/api/stats/health`);
+            const response = await fetch(`${API_BASE_URL}/api/stats`);
             if (response.ok) {
                 console.log('Backend is ready!');
                 return true;
@@ -28,10 +28,10 @@ async function waitForBackend() {
 // API Endpoints
 const API_ENDPOINTS = {
     generate: `${API_BASE_URL}/api/generate`,
-    redirect: `${DISPLAY_BASE_URL}/r`, // Full URL for display
+    redirect: `${API_BASE_URL}`, // The gateway itself handles the short path
     links: `${API_BASE_URL}/api/links`,
     stats: `${API_BASE_URL}/api/stats`,
-    delete: `${API_BASE_URL}/api/delete`
+    delete: `${API_BASE_URL}/api/delete` // Base path, ID will be appended
 };
 
 // Global state
@@ -167,6 +167,11 @@ async function apiRequest(url, options = {}) {
         console.log('Response status:', response.status);
         console.log('Response URL:', response.url);
         
+        // Handle 204 No Content response specifically for DELETE requests
+        if (response.status === 204) {
+            return null;
+        }
+
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -197,10 +202,9 @@ async function getStats() {
 
 // Delete URL function
 async function deleteUrl(id) {
-    return await apiRequest(API_ENDPOINTS.delete, {
-        method: 'DELETE',
-        body: JSON.stringify({ id: id })
-    });
+    // Use RESTful pattern: DELETE /api/delete/{id}
+    const url = `${API_ENDPOINTS.delete}/${id}`;
+    return await apiRequest(url, { method: 'DELETE' });
 }
 
 // URL shortening form handler
@@ -412,9 +416,9 @@ function getTodayClicks(stats) {
 }
 
 function getUniqueClicks(stats) {
-    // For simplicity, assuming each click is unique
-    // In a real implementation, you'd track by IP or user ID
-    return stats ? stats.length : 0;
+    if (!stats || stats.length === 0) return 0;
+    const uniqueIps = new Set(stats.map(stat => stat.ip_address));
+    return uniqueIps.size;
 }
 
 // Search functionality

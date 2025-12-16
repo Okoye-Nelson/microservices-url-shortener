@@ -1,27 +1,21 @@
-FROM golang:1.22-alpine AS builder
-
+# Build stage
+FROM golang:1.23-alpine AS builder
 WORKDIR /app
 
-# Copy go mod and sum files
 COPY go.mod go.sum ./
-
-# Download dependencies
+# Download dependencies first to leverage Docker cache
 RUN go mod download
 
-# Copy source code
-COPY . .
+# Copy only the necessary source code
+COPY internal/ ./internal/
+COPY services/stats-service/ ./services/stats-service/
 
-# Build the service
-RUN CGO_ENABLED=0 GOOS=linux go build -o stats-service ./services/stats-service/main.go
+# Build a static, production-ready binary
+RUN CGO_ENABLED=0 go build -ldflags="-w -s" -o stats-service ./services/stats-service/
 
-FROM alpine:latest
-
-RUN apk --no-cache add ca-certificates
-
-WORKDIR /root/
-
+# Final stage
+FROM scratch
+WORKDIR /app
 COPY --from=builder /app/stats-service .
-
 EXPOSE 8003
-
 CMD ["./stats-service"]

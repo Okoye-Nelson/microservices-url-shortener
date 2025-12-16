@@ -1,0 +1,67 @@
+# RabbitMQ Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rabbitmq
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rabbitmq
+  template:
+    metadata:
+      labels:
+        app: rabbitmq
+    spec:
+      containers:
+        - name: rabbitmq
+          image: rabbitmq:3.12-management-alpine
+          env:
+            - name: RABBITMQ_DEFAULT_USER # Use secrets instead of plaintext
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-credentials
+                  key: RABBITMQ_DEFAULT_USER
+            - name: RABBITMQ_DEFAULT_PASS # Use secrets instead of plaintext
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-credentials
+                  key: RABBITMQ_DEFAULT_PASS
+          ports:
+            - containerPort: 5672
+            - containerPort: 15672
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "250m"
+          volumeMounts:
+            - name: rabbitmq-storage
+              mountPath: /var/lib/rabbitmq
+      volumes:
+        - name: rabbitmq-storage
+          # BEST PRACTICE: For production, replace emptyDir with a PersistentVolumeClaim
+          # to ensure message durability across pod restarts.
+          # persistentVolumeClaim:
+          #   claimName: rabbitmq-pvc
+          emptyDir: {} # WARNING: Data will be lost on pod restart.
+---
+# RabbitMQ Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq
+  namespace: default
+spec:
+  selector:
+    app: rabbitmq
+  ports:
+    - name: amqp
+      port: 5672
+      targetPort: 5672
+    - name: management
+      port: 15672
+      targetPort: 15672
